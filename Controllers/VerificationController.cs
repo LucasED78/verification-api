@@ -39,7 +39,7 @@ namespace PhoneVerification.Controllers
       {
         var result = await _messageService.SendAsync(new SendMessageOptions
         {
-          From = _configuration["phone"],
+          From = _configuration["Phone"],
           Body = "Hi, this is your verification code: {{code}}",
           To = phone
         });
