@@ -7,7 +7,7 @@ namespace PhoneVerification.Repositories
   {
     private readonly IDatabase _database;
 
-    public RedisVerificationRepository(ConnectionMultiplexer redisConnection)
+    public RedisVerificationRepository(IConnectionMultiplexer redisConnection)
     {
       _database = redisConnection.GetDatabase();
     }
