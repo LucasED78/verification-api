@@ -1,3 +1,12 @@
+using PhoneVerification.Repositories;
+using PhoneVerification.Repositories.Interfaces;
+using PhoneVerification.Services;
+using PhoneVerification.Services.Interfaces;
+using StackExchange.Redis;
+using System.Diagnostics;
+using Twilio;
+using Twilio.Rest.Api.V2010.Account;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -6,6 +15,18 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+var services = builder.Services;
+
+TwilioClient.Init(
+  builder.Configuration["AccountSID"],
+  builder.Configuration["AuthToken"]
+);
+
+services.AddSingleton<IConnectionMultiplexer, ConnectionMultiplexer> (_ => ConnectionMultiplexer.Connect(builder.Configuration["RedisConnection"]));
+services.AddScoped<IVerificationRepository<string>, RedisVerificationRepository>();
+services.AddScoped<IMessageService, SMSService>();
+
 
 var app = builder.Build();
 
