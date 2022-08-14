@@ -9,13 +9,26 @@ namespace PhoneVerification.Controllers
   [ApiController]
   public class VerificationController : ControllerBase
   {
-    private readonly IMessageService _messageService;
+    private readonly IMessageService<SmsVerification> _messageService;
     private readonly IConfiguration _configuration;
 
-    public VerificationController(IMessageService messageService, IConfiguration configuration)
+    public VerificationController(IMessageService<SmsVerification> messageService, IConfiguration configuration)
     {
       _messageService = messageService;
       _configuration = configuration;
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> Get(string phone)
+    {
+      var result = await _messageService.GetAsync(phone);
+
+      if (result != null)
+      {
+        return new OkObjectResult(new { Verified = result.IsVerified, Code = result.Code });
+      }
+
+      return BadRequest("Phone not found");
     }
 
     [HttpPost]
@@ -26,7 +39,7 @@ namespace PhoneVerification.Controllers
         var result = await _messageService.SendAsync(new SendMessageOptions
         {
           From = _configuration["phone"],
-          Body = "Hi, this is your verification code: X-X-X-X-X-X",
+          Body = "Hi, this is your verification code: {{code}}",
           To = phone
         });
 
@@ -35,7 +48,7 @@ namespace PhoneVerification.Controllers
           return BadRequest(result.ErrorMessage);
         }
 
-        return new OkObjectResult(new { Status = result.Status });
+        return new OkObjectResult(new { Code = result.Code });
       } catch (Exception ex)
       {
         return new BadRequestObjectResult(ex.Message);
