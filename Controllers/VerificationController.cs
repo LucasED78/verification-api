@@ -90,5 +90,8 @@ namespace PhoneVerification.Controllers
         return BadRequest();
       }
     }
+
+    [HttpPost("[action]")]
+    public Task<IActionResult> Resend(string phone) => Post(phone);
   }
 }
