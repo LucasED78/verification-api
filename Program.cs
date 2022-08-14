@@ -1,3 +1,4 @@
+using PhoneVerification.Models;
 using PhoneVerification.Repositories;
 using PhoneVerification.Repositories.Interfaces;
 using PhoneVerification.Services;
@@ -25,7 +26,7 @@ TwilioClient.Init(
 
 services.AddSingleton<IConnectionMultiplexer, ConnectionMultiplexer> (_ => ConnectionMultiplexer.Connect(builder.Configuration["RedisConnection"]));
 services.AddScoped<IVerificationRepository<string>, RedisVerificationRepository>();
-services.AddScoped<IMessageService, SMSService>();
+services.AddScoped<IMessageService<SmsVerification>, SMSService>();
 
 
 var app = builder.Build();
