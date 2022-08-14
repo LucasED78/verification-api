@@ -9,5 +9,9 @@
     public Task<bool> SaveAsync(string key, T data);
 
     public Task<T?> GetByIdentifierAsync(string identifier);
+
+    public bool Exists(string key);
+
+    public Task<bool> ExistsAsync(string key);
   }
 }
