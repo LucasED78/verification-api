@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using PhoneVerification.Exceptions;
 using PhoneVerification.Models;
 using PhoneVerification.Services.Interfaces;
 
@@ -9,10 +10,10 @@ namespace PhoneVerification.Controllers
   [ApiController]
   public class VerificationController : ControllerBase
   {
-    private readonly IMessageService<SmsVerification> _messageService;
+    private readonly ISmsService _messageService;
     private readonly IConfiguration _configuration;
 
-    public VerificationController(IMessageService<SmsVerification> messageService, IConfiguration configuration)
+    public VerificationController(ISmsService messageService, IConfiguration configuration)
     {
       _messageService = messageService;
       _configuration = configuration;
@@ -49,9 +50,44 @@ namespace PhoneVerification.Controllers
         }
 
         return new OkObjectResult(new { Code = result.Code });
+      } catch (AlreadyVerifiedException ex)
+      {
+        return new ConflictObjectResult(new { Error = ex.Message });
       } catch (Exception ex)
       {
         return new BadRequestObjectResult(ex.Message);
+      }
+    }
+
+    [HttpPut]
+    public async Task<IActionResult> Verify(string phone, string code)
+    {
+      try
+      {
+        var existant = await _messageService.GetAsync(phone);
+
+        if (existant == null)
+        {
+          return BadRequest("Phone not found");
+        }
+
+        var result = await _messageService.VerifyAsync(phone, code);
+
+        if (result)
+        {
+          return Ok();
+        }
+
+        return BadRequest();
+      } catch (InvalidCodeException)
+      {
+        return new BadRequestObjectResult(new { Error = $"Code {code} is invalid" });
+      } catch (AlreadyVerifiedException ex)
+      {
+        return new ConflictObjectResult(new { Error = ex.Message });
+      } catch (Exception)
+      {
+        return BadRequest();
       }
     }
   }
