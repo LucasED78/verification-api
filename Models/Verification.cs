@@ -1,4 +1,4 @@
-﻿namespace Verification.Models
+﻿namespace PhoneVerification.Models
 {
   public class Verification
   {
