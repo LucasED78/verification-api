@@ -1,4 +1,5 @@
-﻿using PhoneVerification.Models;
+﻿using PhoneVerification.Exceptions;
+using PhoneVerification.Models;
 using PhoneVerification.Repositories.Interfaces;
 using PhoneVerification.Services.Interfaces;
 using System.Diagnostics;
@@ -7,7 +8,7 @@ using Twilio.Rest.Api.V2010.Account;
 
 namespace PhoneVerification.Services
 {
-  public class SMSService : IMessageService<SmsVerification>
+  public class SMSService : ISmsService
   {
     private IVerificationRepository<string> _verificationRepository;
 
@@ -18,7 +19,7 @@ namespace PhoneVerification.Services
 
     public SmsVerification? Get(string identifier)
     {
-      var result = _verificationRepository.GetByIdentifier(identifier);
+      var result = _verificationRepository.GetByIdentifier(identifier.Contains("+") ? identifier : $"+{identifier}");
 
       if (result != null)
       {
@@ -53,6 +54,7 @@ namespace PhoneVerification.Services
       if (hasExistantVerification)
       {
         verification = Get(options.To)!;
+        if (verification.IsVerified) throw new AlreadyVerifiedException("This resource is already verified");
       }
       else
       {
@@ -86,6 +88,8 @@ namespace PhoneVerification.Services
       if (hasExistantVerification)
       {
         verification = (await GetAsync(options.To))!;
+
+        if (verification.IsVerified) throw new AlreadyVerifiedException("This resource is already verified");
       } else
       {
         verification = new SmsVerification
@@ -107,6 +111,46 @@ namespace PhoneVerification.Services
         Code = verification.Code,
         ErrorMessage = result.ErrorMessage
       };
+    }
+
+    public bool Verify(string identifier, string code)
+    {
+      var result = Get(identifier);
+
+
+      if (result != null)
+      {
+        if (result.IsVerified) throw new AlreadyVerifiedException("This resource is already verified");
+        if (result.Code != code) throw new InvalidCodeException();
+
+        result.IsVerified = true;
+
+        _verificationRepository.Save(identifier, JsonSerializer.Serialize(result));
+
+        return true;
+      }
+
+      return false;
+    }
+
+    public async Task<bool> VerifyAsync(string identifier, string code)
+    {
+      var result = await GetAsync(identifier);
+
+
+      if (result != null)
+      {
+        if (result.IsVerified) throw new AlreadyVerifiedException("This resource is already verified");
+        if (result.Code != code) throw new InvalidCodeException();
+
+        result.IsVerified = true;
+
+        await _verificationRepository.SaveAsync(identifier.Contains("+") ? identifier : $"+{identifier}", JsonSerializer.Serialize(result));
+
+        return true;
+      }
+
+      return false;
     }
   }
 }
