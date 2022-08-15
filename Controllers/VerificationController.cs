@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using PhoneVerification.Exceptions;
 using PhoneVerification.Models;
 using PhoneVerification.Services.Interfaces;
+using System.Diagnostics;
 
 namespace PhoneVerification.Controllers
 {
@@ -10,19 +11,25 @@ namespace PhoneVerification.Controllers
   [ApiController]
   public class VerificationController : ControllerBase
   {
-    private readonly ISmsService _messageService;
+    private readonly IMessageService<Verification, SendMessageOptions> _messageService;
     private readonly IConfiguration _configuration;
+    private readonly ICodeVerificationService _codeVerificationService;
 
-    public VerificationController(ISmsService messageService, IConfiguration configuration)
+    public VerificationController(
+      IMessageService<Verification, SendMessageOptions> messageService,
+      IConfiguration configuration,
+      ICodeVerificationService codeVerificationService
+    )
     {
       _messageService = messageService;
       _configuration = configuration;
+      _codeVerificationService = codeVerificationService;
     }
 
     [HttpGet]
-    public async Task<IActionResult> Get(string phone)
+    public async Task<IActionResult> Get(string identifier)
     {
-      var result = await _messageService.GetAsync(phone);
+      var result = await _messageService.GetAsync(identifier);
 
       if (result != null)
       {
@@ -33,7 +40,7 @@ namespace PhoneVerification.Controllers
     }
 
     [HttpPost]
-    public async Task<IActionResult> Post(string phone)
+    public async Task<IActionResult> Post(string identifier)
     {
       try
       {
@@ -41,7 +48,7 @@ namespace PhoneVerification.Controllers
         {
           From = _configuration["Phone"],
           Body = "Hi, this is your verification code: {{code}}",
-          To = phone
+          To = identifier
         });
 
         if (result.ErrorMessage != null)
@@ -60,18 +67,18 @@ namespace PhoneVerification.Controllers
     }
 
     [HttpPut]
-    public async Task<IActionResult> Verify(string phone, string code)
+    public async Task<IActionResult> Verify(string identifier, string code)
     {
       try
       {
-        var existant = await _messageService.GetAsync(phone);
+        var existant = await _messageService.GetAsync(identifier);
 
         if (existant == null)
         {
           return BadRequest("Phone not found");
         }
 
-        var result = await _messageService.VerifyAsync(phone, code);
+        var result = await _codeVerificationService.VerifyAsync(new PhoneNumber(identifier).Value, code);;
 
         if (result)
         {
@@ -79,19 +86,22 @@ namespace PhoneVerification.Controllers
         }
 
         return BadRequest();
+      } catch (ResourceNotFoundException ex)
+      {
+        return new NotFoundObjectResult(new { Error = ex.Message });
       } catch (InvalidCodeException)
       {
         return new BadRequestObjectResult(new { Error = $"Code {code} is invalid" });
       } catch (AlreadyVerifiedException ex)
       {
         return new ConflictObjectResult(new { Error = ex.Message });
-      } catch (Exception)
+      } catch (Exception ex)
       {
-        return BadRequest();
+        return BadRequest(ex.Message);
       }
     }
 
     [HttpPost("[action]")]
-    public Task<IActionResult> Resend(string phone) => Post(phone);
+    public Task<IActionResult> Resend(string identifier) => Post(identifier);
   }
 }

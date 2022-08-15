@@ -25,8 +25,10 @@ TwilioClient.Init(
 );
 
 services.AddSingleton<IConnectionMultiplexer, ConnectionMultiplexer> (_ => ConnectionMultiplexer.Connect(builder.Configuration["RedisConnection"]));
+
+services.AddScoped<ICodeVerificationService, CodeVerificationService>();
 services.AddScoped<IVerificationRepository<string>, RedisVerificationRepository>();
-services.AddScoped<ISmsService, SMSService>();
+services.AddScoped<IMessageService<Verification, SendMessageOptions>, SMSService>();
 
 
 var app = builder.Build();

@@ -2,11 +2,11 @@
 
 namespace PhoneVerification.Services.Interfaces
 {
-  public interface IMessageService<T>
+  public interface IMessageService<T, R> where R : SendMessageOptions
   {
-    SendMessageResponse Send(SendMessageOptions options);
+    SendMessageResponse Send(R options);
 
-    Task<SendMessageResponse> SendAsync(SendMessageOptions options);
+    Task<SendMessageResponse> SendAsync(R options);
 
     T? Get(string identifier);
 
