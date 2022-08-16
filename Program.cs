@@ -3,6 +3,7 @@ using PhoneVerification.Repositories;
 using PhoneVerification.Repositories.Interfaces;
 using PhoneVerification.Services;
 using PhoneVerification.Services.Interfaces;
+using SendGrid;
 using StackExchange.Redis;
 using System.Diagnostics;
 using Twilio;
@@ -25,10 +26,12 @@ TwilioClient.Init(
 );
 
 services.AddSingleton<IConnectionMultiplexer, ConnectionMultiplexer> (_ => ConnectionMultiplexer.Connect(builder.Configuration["RedisConnection"]));
+services.AddSingleton<ISendGridClient, SendGridClient>(_ => new SendGridClient("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"));
 
 services.AddScoped<ICodeVerificationService, CodeVerificationService>();
 services.AddScoped<IVerificationRepository<string>, RedisVerificationRepository>();
 services.AddScoped<IMessageService<Verification, SendMessageOptions>, SMSService>();
+services.AddScoped<IMessageService<Verification, SendMessageOptions>, EmailMessageService>();
 
 
 var app = builder.Build();
