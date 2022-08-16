@@ -7,21 +7,21 @@ using System.Diagnostics;
 
 namespace PhoneVerification.Controllers
 {
-  [Route("api/[controller]")]
+  [Route("api/verification/phone")]
   [ApiController]
-  public class VerificationController : ControllerBase
+  public class PhoneVerificationController : ControllerBase
   {
     private readonly IMessageService<Verification, SendMessageOptions> _messageService;
     private readonly IConfiguration _configuration;
     private readonly ICodeVerificationService _codeVerificationService;
 
-    public VerificationController(
-      IMessageService<Verification, SendMessageOptions> messageService,
+    public PhoneVerificationController(
+      IEnumerable<IMessageService<Verification, SendMessageOptions>> messageServices,
       IConfiguration configuration,
       ICodeVerificationService codeVerificationService
     )
     {
-      _messageService = messageService;
+      _messageService = messageServices.First(service => service.GetType().Name.Contains("SMS"));
       _configuration = configuration;
       _codeVerificationService = codeVerificationService;
     }
