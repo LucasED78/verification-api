@@ -26,7 +26,7 @@ TwilioClient.Init(
 );
 
 services.AddSingleton<IConnectionMultiplexer, ConnectionMultiplexer> (_ => ConnectionMultiplexer.Connect(builder.Configuration["RedisConnection"]));
-services.AddSingleton<ISendGridClient, SendGridClient>(_ => new SendGridClient("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"));
+services.AddSingleton<ISendGridClient, SendGridClient>(_ => new SendGridClient(builder.Configuration["SendGridApiKey"]));
 
 services.AddScoped<ICodeVerificationService, CodeVerificationService>();
 services.AddScoped<IVerificationRepository<string>, RedisVerificationRepository>();
